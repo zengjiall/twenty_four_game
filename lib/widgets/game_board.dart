@@ -39,8 +39,11 @@ class GameBoardState extends State<GameBoard> {
 
   // 计时相关变量
   Timer? _timer;
-  int _remainingSeconds = 30;
+  int _remainingSeconds = 60;
   List<int> _successTimes = []; // 存储成功时的用时
+  List<int> _allTimes = []; // 存储所有回合的用时（包括成功和失败）
+  int _correctNoSolutionCount = 0; // 正确判断无解的次数
+  int _failureCount = 0; // 失败的总次数
   DateTime? _roundStartTime;
 
   @override
@@ -558,7 +561,8 @@ class GameBoardState extends State<GameBoard> {
 
     return Container(
       key: _cardAreaKey,
-      padding: EdgeInsets.all(isMobile && isPortrait ? 8 : (isIOS ? 16 * scaleFactor : 16)),
+      padding: EdgeInsets.all(
+          isMobile && isPortrait ? 8 : (isIOS ? 16 * scaleFactor : 16)),
       child: Center(
         child: Wrap(
           spacing: spacing,
@@ -730,9 +734,19 @@ class GameBoardState extends State<GameBoard> {
       {bool usedAllTime = false, int? usedTime}) {
     _timer?.cancel();
 
-    // 如果usedAllTime为true，则显示用时为30秒
+    // 如果usedAllTime为true，则显示用时为60秒
     if (usedAllTime) {
-      usedTime = 30;
+      usedTime = 60;
+    }
+
+    // 记录所有回合的用时
+    if (usedTime != null) {
+      _allTimes.add(usedTime);
+    }
+
+    // 记录失败次数
+    if (!success) {
+      _failureCount++;
     }
 
     showDialog(
@@ -783,13 +797,21 @@ class GameBoardState extends State<GameBoard> {
           children: [
             Text('完成回合：${gameState.currentRound}/${GameState.totalRounds}'),
             const SizedBox(height: 8),
-            Text('成功次数：${_successTimes.length}'),
+            Text('成功次数：${_successTimes.length}/${GameState.totalRounds}'),
+            Text('正确判断无解次数：$_correctNoSolutionCount/${GameState.totalRounds}'),
+            Text('失败次数：$_failureCount/${GameState.totalRounds}'),
+            const SizedBox(height: 8),
             if (_successTimes.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
-                  '平均用时：${(_successTimes.reduce((a, b) => a + b) / _successTimes.length).toStringAsFixed(1)} 秒'),
+                  '成功平均用时：${(_successTimes.reduce((a, b) => a + b) / _successTimes.length).toStringAsFixed(1)} 秒'),
               Text('最快用时：${_successTimes.reduce(min)} 秒'),
               Text('最慢用时：${_successTimes.reduce(max)} 秒'),
+            ],
+            if (_allTimes.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                  '所有回合平均用时：${(_allTimes.reduce((a, b) => a + b) / _allTimes.length).toStringAsFixed(1)} 秒'),
             ],
           ],
         ),
@@ -1050,7 +1072,8 @@ class GameBoardState extends State<GameBoard> {
     final isPortrait = mediaQuery.orientation == Orientation.portrait; // 竖屏判断
 
     return Container(
-      padding: EdgeInsets.all(isIOS ? 16 * scaleFactor : 16),
+      padding: EdgeInsets.all(
+          isMobile && isPortrait ? 8 : (isIOS ? 16 * scaleFactor : 16)),
       decoration: BoxDecoration(
         color: const Color(0xFF111827),
         borderRadius: BorderRadius.only(
@@ -1063,9 +1086,9 @@ class GameBoardState extends State<GameBoard> {
           ? GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
-              childAspectRatio: 1.5,
-              crossAxisSpacing: isIOS ? 16 * scaleFactor : 16,
-              mainAxisSpacing: isIOS ? 16 * scaleFactor : 16,
+              childAspectRatio: 1.3, // 调整宽高比，使其更加紧凑
+              crossAxisSpacing: isIOS ? 12 * scaleFactor : 12, // 减小间距
+              mainAxisSpacing: isIOS ? 12 * scaleFactor : 12, // 减小间距
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildOperatorWithCards('+', cardSize),
@@ -1104,9 +1127,15 @@ class GameBoardState extends State<GameBoard> {
     // 获取平台信息
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final mediaQuery = MediaQuery.of(context);
+    final isMobile = mediaQuery.size.width < 600; // 移动设备判断
+    final isPortrait = mediaQuery.orientation == Orientation.portrait; // 竖屏判断
     final scaleFactor = isIOS
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
+
+    // 竖屏模式下使用更小的间距
+    final double horizontalSpacing =
+        isMobile && isPortrait ? 8 : (isIOS ? 16 * scaleFactor : 16);
 
     return Container(
       decoration: BoxDecoration(
@@ -1117,14 +1146,15 @@ class GameBoardState extends State<GameBoard> {
           width: isIOS ? 1 * scaleFactor : 1,
         ),
       ),
-      padding: EdgeInsets.all(isIOS ? 8 * scaleFactor : 8),
+      padding: EdgeInsets.all(
+          isMobile && isPortrait ? 4 : (isIOS ? 8 * scaleFactor : 8)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildCardDropZone(operator, 'left', cardSize),
-          SizedBox(width: isIOS ? 16 * scaleFactor : 16),
+          SizedBox(width: horizontalSpacing),
           _buildOperatorZone(operator),
-          SizedBox(width: isIOS ? 16 * scaleFactor : 16),
+          SizedBox(width: horizontalSpacing),
           _buildCardDropZone(operator, 'right', cardSize),
         ],
       ),
@@ -1135,14 +1165,21 @@ class GameBoardState extends State<GameBoard> {
     // 获取平台信息
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final mediaQuery = MediaQuery.of(context);
+    final isMobile = mediaQuery.size.width < 600; // 移动设备判断
+    final isPortrait = mediaQuery.orientation == Orientation.portrait; // 竖屏判断
     final scaleFactor = isIOS
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
 
+    // 根据设备类型和方向调整大小
+    final double operatorSize = isMobile && isPortrait
+        ? 70 // 移动设备竖屏模式使用更大的尺寸
+        : (isIOS ? 60 * scaleFactor : 60);
+
     return Container(
       key: _operatorKeys[operator],
-      width: isIOS ? 60 * scaleFactor : 60, // 根据平台调整宽度
-      height: isIOS ? 60 * scaleFactor : 60, // 根据平台调整高度
+      width: operatorSize, // 增大宽度
+      height: operatorSize, // 增大高度
       decoration: BoxDecoration(
         color: const Color(0xFF374151),
         borderRadius: BorderRadius.circular(isIOS ? 12 * scaleFactor : 12),
@@ -1161,8 +1198,8 @@ class GameBoardState extends State<GameBoard> {
       child: Center(
         child: Text(
           operator,
-          style: const TextStyle(
-            fontSize: 36, // 增大字号
+          style: TextStyle(
+            fontSize: isMobile && isPortrait ? 48 : 36, // 增大字号
             fontWeight: FontWeight.w900, // 加粗
             color: Colors.white,
           ),
@@ -1181,16 +1218,24 @@ class GameBoardState extends State<GameBoard> {
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
 
+    // 竖屏模式下调整卡片大小
+    final double dropZoneWidth =
+        isMobile && isPortrait ? cardSize * 0.9 : cardSize * 1.2;
+    final double dropZoneHeight =
+        isMobile && isPortrait ? cardSize * 1.3 : cardSize * 1.6;
+
     return DragTarget<PlayingCard>(
       builder: (context, candidateData, rejectedData) {
         PlayingCard? currentCard = operatorCards[operator]![side];
         return Container(
-          width: isMobile && isPortrait ? cardSize : cardSize * 1.2,
-          height: isMobile && isPortrait ? cardSize * 1.4 : cardSize * 1.6,
-          margin: EdgeInsets.all(isMobile && isPortrait ? 4 : (isIOS ? 8 * scaleFactor : 8)),
+          width: dropZoneWidth,
+          height: dropZoneHeight,
+          margin: EdgeInsets.all(
+              isMobile && isPortrait ? 2 : (isIOS ? 8 * scaleFactor : 8)),
           decoration: BoxDecoration(
             color: const Color(0xFF2D3748),
-            borderRadius: BorderRadius.circular(isMobile && isPortrait ? 8 : (isIOS ? 12 * scaleFactor : 12)),
+            borderRadius: BorderRadius.circular(
+                isMobile && isPortrait ? 8 : (isIOS ? 12 * scaleFactor : 12)),
             border: Border.all(
               color: candidateData.isNotEmpty
                   ? const Color(0xFF60A5FA)
@@ -1204,7 +1249,9 @@ class GameBoardState extends State<GameBoard> {
                   child: Icon(
                     Icons.add_circle_outline,
                     color: const Color(0xFF6B7280),
-                    size: isMobile && isPortrait ? 24 : (isIOS ? 32 * scaleFactor : 32),
+                    size: isMobile && isPortrait
+                        ? 24
+                        : (isIOS ? 32 * scaleFactor : 32),
                   ),
                 ),
         );
@@ -1238,6 +1285,7 @@ class GameBoardState extends State<GameBoard> {
       // 正确判断无解
       int usedTime = _calculateUsedTime();
       _successTimes.add(usedTime);
+      _correctNoSolutionCount++; // 增加正确判断无解的计数
       _showGameResult(true, '正确！这组牌确实无解。\n用时：$usedTime 秒', usedTime: usedTime);
     }
   }
@@ -1337,9 +1385,9 @@ class GameBoardState extends State<GameBoard> {
 
     // 根据剩余时间确定颜色
     Color timerColor = Colors.green;
-    if (_remainingSeconds <= 10) {
+    if (_remainingSeconds <= 20) {
       timerColor = Colors.red;
-    } else if (_remainingSeconds <= 20) {
+    } else if (_remainingSeconds <= 40) {
       timerColor = Colors.orange;
     }
 
@@ -1360,8 +1408,10 @@ class GameBoardState extends State<GameBoard> {
         boxShadow: [
           BoxShadow(
             color: timerColor.withOpacity(0.5),
-            blurRadius: isMobile && isPortrait ? 6 : (isIOS ? 10 * scaleFactor : 10),
-            spreadRadius: isMobile && isPortrait ? 1 : (isIOS ? 2 * scaleFactor : 2),
+            blurRadius:
+                isMobile && isPortrait ? 6 : (isIOS ? 10 * scaleFactor : 10),
+            spreadRadius:
+                isMobile && isPortrait ? 1 : (isIOS ? 2 * scaleFactor : 2),
           ),
         ],
       ),
@@ -1373,8 +1423,9 @@ class GameBoardState extends State<GameBoard> {
             width: timerSize * 0.9,
             height: timerSize * 0.9,
             child: CircularProgressIndicator(
-              value: _remainingSeconds / 30, // 30秒为满值
-              strokeWidth: isMobile && isPortrait ? 4 : (isIOS ? 8 * scaleFactor : 8),
+              value: _remainingSeconds / 60, // 60秒为满值
+              strokeWidth:
+                  isMobile && isPortrait ? 4 : (isIOS ? 8 * scaleFactor : 8),
               backgroundColor: Colors.grey.withOpacity(0.3),
               color: timerColor,
             ),
@@ -1406,7 +1457,7 @@ class GameBoardState extends State<GameBoard> {
   }
 
   void _startTimer() {
-    _remainingSeconds = 30;
+    _remainingSeconds = 60;
     _roundStartTime = DateTime.now();
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -1426,7 +1477,7 @@ class GameBoardState extends State<GameBoard> {
   }
 
   int _calculateUsedTime() {
-    if (_roundStartTime == null) return 30;
-    return 30 - _remainingSeconds;
+    if (_roundStartTime == null) return 60;
+    return 60 - _remainingSeconds;
   }
 }
