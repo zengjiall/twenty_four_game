@@ -1086,10 +1086,11 @@ class GameBoardState extends State<GameBoard> {
           ? GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
-              childAspectRatio: 1.3, // 调整宽高比，使其更加紧凑
-              crossAxisSpacing: isIOS ? 12 * scaleFactor : 12, // 减小间距
-              mainAxisSpacing: isIOS ? 12 * scaleFactor : 12, // 减小间距
+              childAspectRatio: 1.5, // 增加宽高比，使其更加宽松
+              crossAxisSpacing: isIOS ? 16 * scaleFactor : 16, // 增加间距
+              mainAxisSpacing: isIOS ? 16 * scaleFactor : 16, // 增加间距
               physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.all(8), // 添加内边距
               children: [
                 _buildOperatorWithCards('+', cardSize),
                 _buildOperatorWithCards('-', cardSize),
@@ -1133,9 +1134,9 @@ class GameBoardState extends State<GameBoard> {
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
 
-    // 竖屏模式下使用更小的间距
+    // 竖屏模式下使用更合适的间距
     final double horizontalSpacing =
-        isMobile && isPortrait ? 8 : (isIOS ? 16 * scaleFactor : 16);
+        isMobile && isPortrait ? 12 : (isIOS ? 16 * scaleFactor : 16);
 
     return Container(
       decoration: BoxDecoration(
@@ -1147,7 +1148,7 @@ class GameBoardState extends State<GameBoard> {
         ),
       ),
       padding: EdgeInsets.all(
-          isMobile && isPortrait ? 4 : (isIOS ? 8 * scaleFactor : 8)),
+          isMobile && isPortrait ? 6 : (isIOS ? 8 * scaleFactor : 8)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1173,7 +1174,7 @@ class GameBoardState extends State<GameBoard> {
 
     // 根据设备类型和方向调整大小
     final double operatorSize = isMobile && isPortrait
-        ? 70 // 移动设备竖屏模式使用更大的尺寸
+        ? 60 // 移动设备竖屏模式使用更合适的尺寸
         : (isIOS ? 60 * scaleFactor : 60);
 
     return Container(
@@ -1218,11 +1219,11 @@ class GameBoardState extends State<GameBoard> {
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
 
-    // 竖屏模式下调整卡片大小
+    // 竖屏模式下调整卡片大小，使其更小以避免重叠
     final double dropZoneWidth =
-        isMobile && isPortrait ? cardSize * 0.9 : cardSize * 1.2;
+        isMobile && isPortrait ? cardSize * 0.8 : cardSize * 1.2;
     final double dropZoneHeight =
-        isMobile && isPortrait ? cardSize * 1.3 : cardSize * 1.6;
+        isMobile && isPortrait ? cardSize * 1.2 : cardSize * 1.6;
 
     return DragTarget<PlayingCard>(
       builder: (context, candidateData, rejectedData) {
@@ -1231,7 +1232,7 @@ class GameBoardState extends State<GameBoard> {
           width: dropZoneWidth,
           height: dropZoneHeight,
           margin: EdgeInsets.all(
-              isMobile && isPortrait ? 2 : (isIOS ? 8 * scaleFactor : 8)),
+              isMobile && isPortrait ? 4 : (isIOS ? 8 * scaleFactor : 8)),
           decoration: BoxDecoration(
             color: const Color(0xFF2D3748),
             borderRadius: BorderRadius.circular(
