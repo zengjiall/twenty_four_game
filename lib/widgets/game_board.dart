@@ -337,6 +337,8 @@ class GameBoardState extends State<GameBoard> {
     // 获取设备信息，用于适配不同平台
     final mediaQuery = MediaQuery.of(context);
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final isMobile = mediaQuery.size.width < 600; // 移动设备判断
+    final isPortrait = mediaQuery.orientation == Orientation.portrait; // 竖屏判断
 
     // 计算适配系数，确保iOS上的显示与网页版保持一致的比例
     final double scaleFactor = isIOS
@@ -385,71 +387,155 @@ class GameBoardState extends State<GameBoard> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // 计算合适的卡片大小，适配iOS
-          double cardSize =
-              (constraints.maxWidth - (isIOS ? 180 * scaleFactor : 200)) / 6;
-          cardSize = cardSize.clamp(
-              isIOS ? 50.0 : 60.0, isIOS ? 90.0 : 100.0); // 根据平台调整限制范围
+          // 获取屏幕方向和移动设备判断
+          final isMobile = mediaQuery.size.width < 600;
+          final isPortrait = mediaQuery.orientation == Orientation.portrait;
 
-          return Stack(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: _buildCardArea(cardSize: cardSize),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: _buildOperatorArea(cardSize: cardSize),
-                        ),
-                      ],
+          // 计算合适的卡片大小，适配不同设备和方向
+          double cardSize;
+          if (isMobile) {
+            if (isPortrait) {
+              // 移动设备竖屏模式
+              cardSize =
+                  (constraints.maxWidth - (isIOS ? 120 * scaleFactor : 140)) /
+                      4;
+            } else {
+              // 移动设备横屏模式
+              cardSize =
+                  (constraints.maxWidth - (isIOS ? 180 * scaleFactor : 200)) /
+                      6;
+            }
+          } else {
+            // 桌面模式
+            cardSize =
+                (constraints.maxWidth - (isIOS ? 180 * scaleFactor : 200)) / 6;
+          }
+
+          // 限制卡片大小范围
+          cardSize = cardSize.clamp(isIOS ? 50.0 : 60.0, isIOS ? 90.0 : 100.0);
+
+          // 移动设备竖屏模式使用不同的布局
+          if (isMobile && isPortrait) {
+            return Stack(
+              children: [
+                Column(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _buildCardArea(cardSize: cardSize),
                     ),
-                  ),
-                  // 右侧按钮区域
-                  Container(
-                    width: 120,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _undoLastMove,
-                          icon: const Icon(Icons.undo),
-                          label: const Text('撤销'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 12),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: () => _handleNoSolution(),
-                          icon: const Icon(Icons.close),
-                          label: const Text('无解'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 12),
-                          ),
-                        ),
-                      ],
+                    Expanded(
+                      flex: 3,
+                      child: _buildOperatorArea(cardSize: cardSize),
                     ),
-                  ),
-                ],
-              ),
-              // 倒计时器窗口
-              Positioned(
-                top: 20,
-                right: 140, // 放在右侧按钮区域左边
-                child: _buildCountdownTimer(),
-              ),
-            ],
-          );
+                    // 底部按钮区域
+                    Container(
+                      height: 80,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _undoLastMove,
+                              icon: const Icon(Icons.undo, size: 20),
+                              label: const Text('撤销'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _handleNoSolution(),
+                              icon: const Icon(Icons.close, size: 20),
+                              label: const Text('无解'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                // 倒计时器窗口 - 竖屏模式放在顶部中间
+                Positioned(
+                  top: 20,
+                  left: 0,
+                  right: 0,
+                  child: Center(child: _buildCountdownTimer()),
+                ),
+              ],
+            );
+          } else {
+            // 横屏或桌面模式使用原有布局
+            return Stack(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: _buildCardArea(cardSize: cardSize),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: _buildOperatorArea(cardSize: cardSize),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 右侧按钮区域
+                    Container(
+                      width: isMobile ? 100 : 120,
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _undoLastMove,
+                            icon: const Icon(Icons.undo),
+                            label: const Text('撤销'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: isMobile ? 10 : 20, vertical: 12),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton.icon(
+                            onPressed: () => _handleNoSolution(),
+                            icon: const Icon(Icons.close),
+                            label: const Text('无解'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: isMobile ? 10 : 20, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                // 倒计时器窗口 - 横屏模式放在右侧按钮区域左边
+                Positioned(
+                  top: 20,
+                  right: isMobile ? 110 : 140,
+                  child: _buildCountdownTimer(),
+                ),
+              ],
+            );
+          }
         },
       ),
     );
@@ -459,17 +545,24 @@ class GameBoardState extends State<GameBoard> {
     // 获取平台信息
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final mediaQuery = MediaQuery.of(context);
+    final isMobile = mediaQuery.size.width < 600; // 移动设备判断
+    final isPortrait = mediaQuery.orientation == Orientation.portrait; // 竖屏判断
     final scaleFactor = isIOS
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
 
+    // 根据屏幕方向调整间距
+    final double spacing = isMobile && isPortrait
+        ? 12 // 移动设备竖屏模式使用更小的间距
+        : (isIOS ? 16 * scaleFactor : 16);
+
     return Container(
       key: _cardAreaKey,
-      padding: EdgeInsets.all(isIOS ? 16 * scaleFactor : 16),
+      padding: EdgeInsets.all(isMobile && isPortrait ? 8 : (isIOS ? 16 * scaleFactor : 16)),
       child: Center(
         child: Wrap(
-          spacing: isIOS ? 16 * scaleFactor : 16,
-          runSpacing: isIOS ? 16 * scaleFactor : 16,
+          spacing: spacing,
+          runSpacing: spacing,
           alignment: WrapAlignment.center,
           children: gameState.currentCards.map((card) {
             // 检查卡片是否已经在运算区域
@@ -953,6 +1046,8 @@ class GameBoardState extends State<GameBoard> {
     final scaleFactor = isIOS
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
+    final isMobile = mediaQuery.size.width < 600; // 移动设备判断
+    final isPortrait = mediaQuery.orientation == Orientation.portrait; // 竖屏判断
 
     return Container(
       padding: EdgeInsets.all(isIOS ? 16 * scaleFactor : 16),
@@ -963,28 +1058,45 @@ class GameBoardState extends State<GameBoard> {
           topRight: Radius.circular(isIOS ? 24 * scaleFactor : 24),
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Expanded(child: _buildOperatorWithCards('+', cardSize)),
-              SizedBox(width: isIOS ? 32 * scaleFactor : 32),
-              Expanded(child: _buildOperatorWithCards('-', cardSize)),
-            ],
-          ),
-          SizedBox(height: isIOS ? 24 * scaleFactor : 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Expanded(child: _buildOperatorWithCards('×', cardSize)),
-              SizedBox(width: isIOS ? 32 * scaleFactor : 32),
-              Expanded(child: _buildOperatorWithCards('÷', cardSize)),
-            ],
-          ),
-        ],
-      ),
+      child: isMobile && isPortrait
+          // 移动设备竖屏模式：使用网格布局
+          ? GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              childAspectRatio: 1.5,
+              crossAxisSpacing: isIOS ? 16 * scaleFactor : 16,
+              mainAxisSpacing: isIOS ? 16 * scaleFactor : 16,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildOperatorWithCards('+', cardSize),
+                _buildOperatorWithCards('-', cardSize),
+                _buildOperatorWithCards('×', cardSize),
+                _buildOperatorWithCards('÷', cardSize),
+              ],
+            )
+          // 横屏或桌面模式：使用原有的列布局
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(child: _buildOperatorWithCards('+', cardSize)),
+                    SizedBox(width: isIOS ? 32 * scaleFactor : 32),
+                    Expanded(child: _buildOperatorWithCards('-', cardSize)),
+                  ],
+                ),
+                SizedBox(height: isIOS ? 24 * scaleFactor : 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(child: _buildOperatorWithCards('×', cardSize)),
+                    SizedBox(width: isIOS ? 32 * scaleFactor : 32),
+                    Expanded(child: _buildOperatorWithCards('÷', cardSize)),
+                  ],
+                ),
+              ],
+            ),
     );
   }
 
@@ -1063,6 +1175,8 @@ class GameBoardState extends State<GameBoard> {
     // 获取平台信息
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final mediaQuery = MediaQuery.of(context);
+    final isMobile = mediaQuery.size.width < 600; // 移动设备判断
+    final isPortrait = mediaQuery.orientation == Orientation.portrait; // 竖屏判断
     final scaleFactor = isIOS
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
@@ -1071,17 +1185,17 @@ class GameBoardState extends State<GameBoard> {
       builder: (context, candidateData, rejectedData) {
         PlayingCard? currentCard = operatorCards[operator]![side];
         return Container(
-          width: cardSize * 1.2,
-          height: cardSize * 1.6,
-          margin: EdgeInsets.all(isIOS ? 8 * scaleFactor : 8),
+          width: isMobile && isPortrait ? cardSize : cardSize * 1.2,
+          height: isMobile && isPortrait ? cardSize * 1.4 : cardSize * 1.6,
+          margin: EdgeInsets.all(isMobile && isPortrait ? 4 : (isIOS ? 8 * scaleFactor : 8)),
           decoration: BoxDecoration(
             color: const Color(0xFF2D3748),
-            borderRadius: BorderRadius.circular(isIOS ? 12 * scaleFactor : 12),
+            borderRadius: BorderRadius.circular(isMobile && isPortrait ? 8 : (isIOS ? 12 * scaleFactor : 12)),
             border: Border.all(
               color: candidateData.isNotEmpty
                   ? const Color(0xFF60A5FA)
                   : const Color(0xFF4B5563),
-              width: isIOS ? 2 * scaleFactor : 2,
+              width: isMobile && isPortrait ? 1 : (isIOS ? 2 * scaleFactor : 2),
             ),
           ),
           child: currentCard != null
@@ -1090,7 +1204,7 @@ class GameBoardState extends State<GameBoard> {
                   child: Icon(
                     Icons.add_circle_outline,
                     color: const Color(0xFF6B7280),
-                    size: isIOS ? 32 * scaleFactor : 32,
+                    size: isMobile && isPortrait ? 24 : (isIOS ? 32 * scaleFactor : 32),
                   ),
                 ),
         );
@@ -1215,6 +1329,8 @@ class GameBoardState extends State<GameBoard> {
     // 获取平台信息
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final mediaQuery = MediaQuery.of(context);
+    final isMobile = mediaQuery.size.width < 600; // 移动设备判断
+    final isPortrait = mediaQuery.orientation == Orientation.portrait; // 竖屏判断
     final scaleFactor = isIOS
         ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
         : 1.0;
@@ -1227,19 +1343,25 @@ class GameBoardState extends State<GameBoard> {
       timerColor = Colors.orange;
     }
 
+    // 根据屏幕方向调整计时器大小
+    double timerSize = isMobile && isPortrait
+        ? 80 // 移动设备竖屏模式使用更小的尺寸
+        : (isIOS ? 100 * scaleFactor : 100);
+
     return Container(
-      width: isIOS ? 100 * scaleFactor : 100,
-      height: isIOS ? 100 * scaleFactor : 100,
+      width: timerSize,
+      height: timerSize,
       decoration: BoxDecoration(
         color: const Color(0xFF111827).withOpacity(0.8),
-        borderRadius: BorderRadius.circular(isIOS ? 50 * scaleFactor : 50),
-        border:
-            Border.all(color: timerColor, width: isIOS ? 3 * scaleFactor : 3),
+        borderRadius: BorderRadius.circular(timerSize / 2),
+        border: Border.all(
+            color: timerColor,
+            width: isMobile && isPortrait ? 2 : (isIOS ? 3 * scaleFactor : 3)),
         boxShadow: [
           BoxShadow(
             color: timerColor.withOpacity(0.5),
-            blurRadius: isIOS ? 10 * scaleFactor : 10,
-            spreadRadius: isIOS ? 2 * scaleFactor : 2,
+            blurRadius: isMobile && isPortrait ? 6 : (isIOS ? 10 * scaleFactor : 10),
+            spreadRadius: isMobile && isPortrait ? 1 : (isIOS ? 2 * scaleFactor : 2),
           ),
         ],
       ),
@@ -1248,11 +1370,11 @@ class GameBoardState extends State<GameBoard> {
         children: [
           // 圆形进度指示器
           SizedBox(
-            width: isIOS ? 90 * scaleFactor : 90,
-            height: isIOS ? 90 * scaleFactor : 90,
+            width: timerSize * 0.9,
+            height: timerSize * 0.9,
             child: CircularProgressIndicator(
               value: _remainingSeconds / 30, // 30秒为满值
-              strokeWidth: isIOS ? 8 * scaleFactor : 8,
+              strokeWidth: isMobile && isPortrait ? 4 : (isIOS ? 8 * scaleFactor : 8),
               backgroundColor: Colors.grey.withOpacity(0.3),
               color: timerColor,
             ),
@@ -1264,15 +1386,15 @@ class GameBoardState extends State<GameBoard> {
               Text(
                 '$_remainingSeconds',
                 style: TextStyle(
-                  fontSize: 36,
+                  fontSize: isMobile && isPortrait ? 28 : 36,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const Text(
+              Text(
                 '秒',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: isMobile && isPortrait ? 12 : 16,
                   color: Colors.white70,
                 ),
               ),
