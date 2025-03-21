@@ -8,7 +8,7 @@ import '../pages/home_page.dart';
 
 class GameBoard extends StatefulWidget {
   final int targetNumber;
-  
+
   const GameBoard({
     super.key,
     required this.targetNumber,
@@ -22,9 +22,9 @@ class GameBoardState extends State<GameBoard> {
   late GameState gameState;
   final Map<String, Map<String, PlayingCard?>> operatorCards = {};
   final List<Map<String, dynamic>> history = [];
-  bool? _initialHasSolution;  // 存储初始牌组是否有解
-  List<String>? _initialSolutions;  // 存储初始解法
-  
+  bool? _initialHasSolution; // 存储初始牌组是否有解
+  List<String>? _initialSolutions; // 存储初始解法
+
   final Map<String, GlobalKey> _operatorKeys = {
     '+': GlobalKey(),
     '-': GlobalKey(),
@@ -33,16 +33,16 @@ class GameBoardState extends State<GameBoard> {
   };
 
   final GlobalKey _cardAreaKey = GlobalKey();
-  
+
   // 添加一个类成员变量来存储 OverlayEntry
   OverlayEntry? _currentOverlay;
-  
+
   // 计时相关变量
   Timer? _timer;
   int _remainingSeconds = 30;
   List<int> _successTimes = []; // 存储成功时的用时
   DateTime? _roundStartTime;
-  
+
   @override
   void initState() {
     super.initState();
@@ -74,9 +74,8 @@ class GameBoardState extends State<GameBoard> {
 
   void _calculateInitialSolutions() {
     List<String> solutions = _findAllSolutions(
-      gameState.currentCards.map((card) => card.value).toList(),
-      widget.targetNumber
-    );
+        gameState.currentCards.map((card) => card.value).toList(),
+        widget.targetNumber);
     _initialSolutions = _normalizeAndDeduplicateSolutions(solutions);
     _initialHasSolution = _initialSolutions!.isNotEmpty;
   }
@@ -90,7 +89,7 @@ class GameBoardState extends State<GameBoard> {
       for (int j = i + 1; j < numbers.length; j++) {
         int num1 = numbers[i];
         int num2 = numbers[j];
-        
+
         // 创建新的数字列表，移除已使用的数字
         List<int> remainingNumbers = List.from(numbers);
         remainingNumbers.removeAt(j);
@@ -149,7 +148,7 @@ class GameBoardState extends State<GameBoard> {
         }
       }
     }
-    
+
     return false;
   }
 
@@ -213,18 +212,17 @@ class GameBoardState extends State<GameBoard> {
 
   void _undoLastMove() {
     if (history.isEmpty) return;
-    
+
     setState(() {
       final lastMove = history.removeLast();
-      
+
       // 移除新生成的牌
       gameState.currentCards.remove(lastMove['resultCard'] as PlayingCard);
-      
+
       // 恢复原来的牌
       gameState.currentCards.addAll(
-        (lastMove['removedCards'] as List<PlayingCard>).map((card) => card)
-      );
-      
+          (lastMove['removedCards'] as List<PlayingCard>).map((card) => card));
+
       // 清空运算符位置
       final operator = lastMove['operator'] as String;
       operatorCards[operator]!['left'] = null;
@@ -234,11 +232,16 @@ class GameBoardState extends State<GameBoard> {
 
   String _getCardLabel(int value) {
     switch (value) {
-      case 1: return 'A';
-      case 11: return 'J';
-      case 12: return 'Q';
-      case 13: return 'K';
-      default: return value.toString();
+      case 1:
+        return 'A';
+      case 11:
+        return 'J';
+      case 12:
+        return 'Q';
+      case 13:
+        return 'K';
+      default:
+        return value.toString();
     }
   }
 
@@ -284,7 +287,7 @@ class GameBoardState extends State<GameBoard> {
 
   List<Widget> _buildCardPattern(String suit, int value, double size) {
     String imagePath = 'assets/images/${_getCardImageName(value, suit)}';
-    
+
     return [
       Center(
         child: Image.asset(
@@ -299,7 +302,8 @@ class GameBoardState extends State<GameBoard> {
               style: TextStyle(
                 fontSize: size * 0.5,
                 fontWeight: FontWeight.bold,
-                color: (suit == '♥' || suit == '♦') ? Colors.red : Colors.black87,
+                color:
+                    (suit == '♥' || suit == '♦') ? Colors.red : Colors.black87,
               ),
             );
           },
@@ -311,16 +315,40 @@ class GameBoardState extends State<GameBoard> {
   List<Offset> _getPatternPositions(int value) {
     // 预定义的花色位置，根据牌面数字返回对应的位置
     switch (value) {
-      case 1: return [const Offset(0.5, 0.5)];  // A
-      case 2: return [const Offset(0.5, 0.3), const Offset(0.5, 0.7)];
-      case 3: return [const Offset(0.5, 0.2), const Offset(0.5, 0.5), const Offset(0.5, 0.8)];
+      case 1:
+        return [const Offset(0.5, 0.5)]; // A
+      case 2:
+        return [const Offset(0.5, 0.3), const Offset(0.5, 0.7)];
+      case 3:
+        return [
+          const Offset(0.5, 0.2),
+          const Offset(0.5, 0.5),
+          const Offset(0.5, 0.8)
+        ];
       // ... 可以继续添加其他数字的位置
-      default: return List.generate(value, (i) => Offset(0.3 + (i % 2) * 0.4, 0.2 + (i ~/ 2) * 0.2));
+      default:
+        return List.generate(
+            value, (i) => Offset(0.3 + (i % 2) * 0.4, 0.2 + (i ~/ 2) * 0.2));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // 获取设备信息，用于适配不同平台
+    final mediaQuery = MediaQuery.of(context);
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    // 计算适配系数，确保iOS上的显示与网页版保持一致的比例
+    final double scaleFactor = isIOS
+        ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
+        : 1.0;
+
+    // 适配字体大小
+    final double titleFontSize =
+        24 * (isIOS ? min(scaleFactor * 1.2, 1.0) : 1.0);
+    final double subtitleFontSize =
+        20 * (isIOS ? min(scaleFactor * 1.2, 1.0) : 1.0);
+
     return Scaffold(
       backgroundColor: const Color(0xFF1F2937),
       appBar: AppBar(
@@ -329,92 +357,96 @@ class GameBoardState extends State<GameBoard> {
           children: [
             Text(
               '目标数字: ${widget.targetNumber}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 20),
+            SizedBox(width: 20 * (isIOS ? scaleFactor : 1.0)),
             Text(
               '轮数: ${gameState.currentRound}/${GameState.totalRounds}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: subtitleFontSize,
               ),
             ),
-            const SizedBox(width: 20),
+            SizedBox(width: 20 * (isIOS ? scaleFactor : 1.0)),
             Text(
               '得分: ${gameState.score}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: subtitleFontSize,
               ),
             ),
           ],
         ),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                '剩余时间：$_remainingSeconds 秒',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ),
-        ],
+        actions: [],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // 计算合适的卡片大小
-          double cardSize = (constraints.maxWidth - 200) / 6; // 200是右侧按钮区域的宽度
-          cardSize = cardSize.clamp(60.0, 100.0); // 限制最小和最大尺寸
+          // 计算合适的卡片大小，适配iOS
+          double cardSize =
+              (constraints.maxWidth - (isIOS ? 180 * scaleFactor : 200)) / 6;
+          cardSize = cardSize.clamp(
+              isIOS ? 50.0 : 60.0, isIOS ? 90.0 : 100.0); // 根据平台调整限制范围
 
-          return Row(
+          return Stack(
             children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildCardArea(cardSize: cardSize),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _buildCardArea(cardSize: cardSize),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: _buildOperatorArea(cardSize: cardSize),
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      flex: 3,
-                      child: _buildOperatorArea(cardSize: cardSize),
+                  ),
+                  // 右侧按钮区域
+                  Container(
+                    width: 120,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _undoLastMove,
+                          icon: const Icon(Icons.undo),
+                          label: const Text('撤销'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () => _handleNoSolution(),
+                          icon: const Icon(Icons.close),
+                          label: const Text('无解'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              // 右侧按钮区域
-              Container(
-                width: 120,
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _undoLastMove,
-                      icon: const Icon(Icons.undo),
-                      label: const Text('撤销'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: () => _handleNoSolution(),
-                      icon: const Icon(Icons.close),
-                      label: const Text('无解'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      ),
-                    ),
-                  ],
-                ),
+              // 倒计时器窗口
+              Positioned(
+                top: 20,
+                right: 140, // 放在右侧按钮区域左边
+                child: _buildCountdownTimer(),
               ),
             ],
           );
@@ -424,13 +456,20 @@ class GameBoardState extends State<GameBoard> {
   }
 
   Widget _buildCardArea({required double cardSize}) {
+    // 获取平台信息
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final mediaQuery = MediaQuery.of(context);
+    final scaleFactor = isIOS
+        ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
+        : 1.0;
+
     return Container(
       key: _cardAreaKey,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isIOS ? 16 * scaleFactor : 16),
       child: Center(
         child: Wrap(
-          spacing: 16,
-          runSpacing: 16,
+          spacing: isIOS ? 16 * scaleFactor : 16,
+          runSpacing: isIOS ? 16 * scaleFactor : 16,
           alignment: WrapAlignment.center,
           children: gameState.currentCards.map((card) {
             // 检查卡片是否已经在运算区域
@@ -440,7 +479,7 @@ class GameBoardState extends State<GameBoard> {
                 isInOperatorArea = true;
               }
             });
-            
+
             // 如果卡片在运算区域，则不显示
             if (isInOperatorArea) {
               return const SizedBox.shrink();
@@ -553,7 +592,7 @@ class GameBoardState extends State<GameBoard> {
     _showResultAnimation(resultCard, operator, () {
       setState(() {
         gameState.currentCards.add(resultCard);
-        
+
         // 检查是否只剩下一张牌
         if (gameState.currentCards.length == 1) {
           _checkFinalResult();
@@ -568,30 +607,40 @@ class GameBoardState extends State<GameBoard> {
 
   void _checkFinalResult() {
     PlayingCard finalCard = gameState.currentCards.first;
-    int finalValue = finalCard.numerator == 0 
-        ? finalCard.value 
+    int finalValue = finalCard.numerator == 0
+        ? finalCard.value
         : (finalCard.numerator / finalCard.denominator).round();
-    
+
     if (finalValue == widget.targetNumber) {
       // 成功
-      _showGameResult(true, '恭喜你成功得到 ${widget.targetNumber}！');
+      int usedTime = _calculateUsedTime();
+      _successTimes.add(usedTime);
+      _showGameResult(true, '恭喜你成功得到 ${widget.targetNumber}！',
+          usedTime: usedTime);
     } else {
       // 失败，检查是否有解
       List<String> solutions = _findAllSolutions(
-        history.first['removedCards'].map<int>((card) => card.value).toList(),
-        widget.targetNumber
-      );
-      
+          history.first['removedCards'].map<int>((card) => card.value).toList(),
+          widget.targetNumber);
+
       if (solutions.isEmpty) {
-        _showGameResult(false, '这组牌无解。');
+        _showGameResult(false, '这组牌无解。', usedAllTime: true);
       } else {
-        _showGameResult(false, '失败了，这组牌有解。\n第一种解法：\n${solutions.first}');
+        // 得到错误答案，用时记为30秒
+        _showGameResult(false, '失败了，这组牌有解。\n第一种解法：\n${solutions.first}',
+            usedAllTime: true);
       }
     }
   }
 
-  void _showGameResult(bool success, String message, {bool usedAllTime = false, int? usedTime}) {
+  void _showGameResult(bool success, String message,
+      {bool usedAllTime = false, int? usedTime}) {
     _timer?.cancel();
+
+    // 如果usedAllTime为true，则显示用时为30秒
+    if (usedAllTime) {
+      usedTime = 30;
+    }
 
     showDialog(
       context: context,
@@ -604,14 +653,13 @@ class GameBoardState extends State<GameBoard> {
           children: [
             Text(message),
             const SizedBox(height: 8),
-            if (usedTime != null)
-              Text('本轮用时：$usedTime 秒'),
+            if (usedTime != null) Text('本轮用时：$usedTime 秒'),
             if (_successTimes.isNotEmpty)
-              Text('平均用时：${(_successTimes.reduce((a, b) => a + b) / _successTimes.length).toStringAsFixed(1)} 秒'),
+              Text(
+                  '平均用时：${(_successTimes.reduce((a, b) => a + b) / _successTimes.length).toStringAsFixed(1)} 秒'),
             Text('当前回合：${gameState.currentRound}/${GameState.totalRounds}'),
             if (!gameState.hasNextRound())
-              const Text('\n注意：这是最后一局了！', 
-                style: TextStyle(color: Colors.red)),
+              const Text('\n注意：这是最后一局了！', style: TextStyle(color: Colors.red)),
           ],
         ),
         actions: [
@@ -645,7 +693,8 @@ class GameBoardState extends State<GameBoard> {
             Text('成功次数：${_successTimes.length}'),
             if (_successTimes.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('平均用时：${(_successTimes.reduce((a, b) => a + b) / _successTimes.length).toStringAsFixed(1)} 秒'),
+              Text(
+                  '平均用时：${(_successTimes.reduce((a, b) => a + b) / _successTimes.length).toStringAsFixed(1)} 秒'),
               Text('最快用时：${_successTimes.reduce(min)} 秒'),
               Text('最慢用时：${_successTimes.reduce(max)} 秒'),
             ],
@@ -668,18 +717,20 @@ class GameBoardState extends State<GameBoard> {
     );
   }
 
-  void _showResultAnimation(PlayingCard card, String operator, VoidCallback onComplete) {
+  void _showResultAnimation(
+      PlayingCard card, String operator, VoidCallback onComplete) {
     // 获取运算符的全局位置
     final RenderBox? operatorBox = _getOperatorPosition(operator);
     if (operatorBox == null) return;
-    
+
     final Offset operatorPosition = operatorBox.localToGlobal(Offset.zero);
     final Size operatorSize = operatorBox.size;
 
     // 获取卡片区域的全局位置
-    final RenderBox? cardAreaBox = _cardAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? cardAreaBox =
+        _cardAreaKey.currentContext?.findRenderObject() as RenderBox?;
     if (cardAreaBox == null) return;
-    
+
     final Offset cardAreaPosition = cardAreaBox.localToGlobal(Offset.zero);
     final Size cardAreaSize = cardAreaBox.size;
 
@@ -708,7 +759,7 @@ class GameBoardState extends State<GameBoard> {
         onEnd: () {
           _currentOverlay?.remove();
           _currentOverlay = null;
-          onComplete();  // 调用完成回调
+          onComplete(); // 调用完成回调
         },
       ),
     );
@@ -725,29 +776,34 @@ class GameBoardState extends State<GameBoard> {
     return a;
   }
 
-  Widget _buildCard(PlayingCard card, {double size = 100, double opacity = 1.0}) {
+  Widget _buildCard(PlayingCard card,
+      {double size = 100, double opacity = 1.0}) {
     // 修复牌值显示
     String getCardValue() {
       if (card.numerator != 0) {
-        return card.denominator == 1 
+        return card.denominator == 1
             ? card.numerator.toString()
             : '${card.numerator}/${card.denominator}';
       }
       // 对于初始牌，根据实际值显示
       if (card.value > 10) {
         switch (card.value) {
-          case 11: return 'J';
-          case 12: return 'Q';
-          case 13: return 'K';
-          default: return card.value.toString();
+          case 11:
+            return 'J';
+          case 12:
+            return 'Q';
+          case 13:
+            return 'K';
+          default:
+            return card.value.toString();
         }
       }
       return card.value.toString();
     }
 
-    bool isInitialCard = gameState.currentCards.contains(card) && 
-                        card.numerator == 0;
-    
+    bool isInitialCard =
+        gameState.currentCards.contains(card) && card.numerator == 0;
+
     if (!isInitialCard) {
       return Opacity(
         opacity: opacity,
@@ -780,9 +836,10 @@ class GameBoardState extends State<GameBoard> {
     }
 
     // 初始牌的显示逻辑
-    Color cardColor = card.suit != null && (card.suit == '♥' || card.suit == '♦') 
-        ? Colors.red 
-        : Colors.black87;
+    Color cardColor =
+        card.suit != null && (card.suit == '♥' || card.suit == '♦')
+            ? Colors.red
+            : Colors.black87;
     String label = _getCardLabel(card.value);
 
     return Opacity(
@@ -890,13 +947,20 @@ class GameBoardState extends State<GameBoard> {
   }
 
   Widget _buildOperatorArea({required double cardSize}) {
+    // 获取平台信息
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final mediaQuery = MediaQuery.of(context);
+    final scaleFactor = isIOS
+        ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
+        : 1.0;
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF111827),
+      padding: EdgeInsets.all(isIOS ? 16 * scaleFactor : 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111827),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+          topLeft: Radius.circular(isIOS ? 24 * scaleFactor : 24),
+          topRight: Radius.circular(isIOS ? 24 * scaleFactor : 24),
         ),
       ),
       child: Column(
@@ -906,16 +970,16 @@ class GameBoardState extends State<GameBoard> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Expanded(child: _buildOperatorWithCards('+', cardSize)),
-              const SizedBox(width: 32),
+              SizedBox(width: isIOS ? 32 * scaleFactor : 32),
               Expanded(child: _buildOperatorWithCards('-', cardSize)),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: isIOS ? 24 * scaleFactor : 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Expanded(child: _buildOperatorWithCards('×', cardSize)),
-              const SizedBox(width: 32),
+              SizedBox(width: isIOS ? 32 * scaleFactor : 32),
               Expanded(child: _buildOperatorWithCards('÷', cardSize)),
             ],
           ),
@@ -925,23 +989,30 @@ class GameBoardState extends State<GameBoard> {
   }
 
   Widget _buildOperatorWithCards(String operator, double cardSize) {
+    // 获取平台信息
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final mediaQuery = MediaQuery.of(context);
+    final scaleFactor = isIOS
+        ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
+        : 1.0;
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1F2937),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isIOS ? 16 * scaleFactor : 16),
         border: Border.all(
           color: const Color(0xFF374151),
-          width: 1,
+          width: isIOS ? 1 * scaleFactor : 1,
         ),
       ),
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(isIOS ? 8 * scaleFactor : 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildCardDropZone(operator, 'left', cardSize),
-          const SizedBox(width: 16),
+          SizedBox(width: isIOS ? 16 * scaleFactor : 16),
           _buildOperatorZone(operator),
-          const SizedBox(width: 16),
+          SizedBox(width: isIOS ? 16 * scaleFactor : 16),
           _buildCardDropZone(operator, 'right', cardSize),
         ],
       ),
@@ -949,22 +1020,29 @@ class GameBoardState extends State<GameBoard> {
   }
 
   Widget _buildOperatorZone(String operator) {
+    // 获取平台信息
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final mediaQuery = MediaQuery.of(context);
+    final scaleFactor = isIOS
+        ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
+        : 1.0;
+
     return Container(
       key: _operatorKeys[operator],
-      width: 60,  // 增加宽度
-      height: 60,  // 增加高度
+      width: isIOS ? 60 * scaleFactor : 60, // 根据平台调整宽度
+      height: isIOS ? 60 * scaleFactor : 60, // 根据平台调整高度
       decoration: BoxDecoration(
         color: const Color(0xFF374151),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isIOS ? 12 * scaleFactor : 12),
         border: Border.all(
           color: const Color(0xFF4B5563),
-          width: 2,
+          width: isIOS ? 2 * scaleFactor : 2,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: isIOS ? 4 * scaleFactor : 4,
+            offset: Offset(0, isIOS ? 2 * scaleFactor : 2),
           ),
         ],
       ),
@@ -972,8 +1050,8 @@ class GameBoardState extends State<GameBoard> {
         child: Text(
           operator,
           style: const TextStyle(
-            fontSize: 36,  // 增大字号
-            fontWeight: FontWeight.w900,  // 加粗
+            fontSize: 36, // 增大字号
+            fontWeight: FontWeight.w900, // 加粗
             color: Colors.white,
           ),
         ),
@@ -982,30 +1060,37 @@ class GameBoardState extends State<GameBoard> {
   }
 
   Widget _buildCardDropZone(String operator, String side, double cardSize) {
+    // 获取平台信息
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final mediaQuery = MediaQuery.of(context);
+    final scaleFactor = isIOS
+        ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
+        : 1.0;
+
     return DragTarget<PlayingCard>(
       builder: (context, candidateData, rejectedData) {
         PlayingCard? currentCard = operatorCards[operator]![side];
         return Container(
           width: cardSize * 1.2,
           height: cardSize * 1.6,
-          margin: const EdgeInsets.all(8),
+          margin: EdgeInsets.all(isIOS ? 8 * scaleFactor : 8),
           decoration: BoxDecoration(
             color: const Color(0xFF2D3748),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(isIOS ? 12 * scaleFactor : 12),
             border: Border.all(
-              color: candidateData.isNotEmpty 
-                  ? const Color(0xFF60A5FA) 
+              color: candidateData.isNotEmpty
+                  ? const Color(0xFF60A5FA)
                   : const Color(0xFF4B5563),
-              width: 2,
+              width: isIOS ? 2 * scaleFactor : 2,
             ),
           ),
-          child: currentCard != null 
+          child: currentCard != null
               ? _buildCard(currentCard, size: cardSize)
-              : const Center(
+              : Center(
                   child: Icon(
                     Icons.add_circle_outline,
-                    color: Color(0xFF6B7280),
-                    size: 32,
+                    color: const Color(0xFF6B7280),
+                    size: isIOS ? 32 * scaleFactor : 32,
                   ),
                 ),
         );
@@ -1014,17 +1099,14 @@ class GameBoardState extends State<GameBoard> {
       onAccept: (card) {
         setState(() {
           operatorCards[operator]![side] = card;
-          
+
           // 检查是否可以执行运算
-          if (operatorCards[operator]!['left'] != null && 
+          if (operatorCards[operator]!['left'] != null &&
               operatorCards[operator]!['right'] != null) {
             // 延迟一帧执行运算，确保UI更新完成
             Future.microtask(() {
-              _performOperation(
-                operator,
-                operatorCards[operator]!['left']!,
-                operatorCards[operator]!['right']!
-              );
+              _performOperation(operator, operatorCards[operator]!['left']!,
+                  operatorCards[operator]!['right']!);
             });
           }
         });
@@ -1035,7 +1117,9 @@ class GameBoardState extends State<GameBoard> {
   void _handleNoSolution() {
     if (_initialHasSolution == true) {
       // 误判有解为无解，算作用完全部时间
-      _showGameResult(false, '错误！这组牌是有解的。\n这是其中一种解法：\n${_initialSolutions!.first}', usedAllTime: true);
+      _showGameResult(
+          false, '错误！这组牌是有解的。\n这是其中一种解法：\n${_initialSolutions!.first}',
+          usedAllTime: true);
     } else {
       // 正确判断无解
       int usedTime = _calculateUsedTime();
@@ -1044,21 +1128,11 @@ class GameBoardState extends State<GameBoard> {
     }
   }
 
-  List<String> _normalizeAndDeduplicateSolutions(List<String> solutions) {
-    // 规范化每个解法
-    List<String> normalizedSolutions = solutions.map((solution) {
-      return _normalizeSolution(solution);
-    }).toList();
-
-    // 去除重复解法
-    return normalizedSolutions.toSet().toList();
-  }
-
   String _normalizeSolution(String solution) {
     // 将解法拆分成步骤
     List<String> steps = solution.split(' ');
     List<List<String>> operations = [];
-    
+
     // 提取每个操作步骤
     for (int i = 0; i < steps.length; i += 4) {
       if (i + 3 < steps.length) {
@@ -1077,15 +1151,13 @@ class GameBoardState extends State<GameBoard> {
           op[2] = num1.toString();
         }
       }
-      
+
       // 处理特殊情况
-      if (op[1] == '×' && op[2] == '1' || 
-          op[1] == '÷' && op[2] == '1') {
+      if (op[1] == '×' && op[2] == '1' || op[1] == '÷' && op[2] == '1') {
         op[1] = '×';
         op[2] = '1';
       }
-      if (op[1] == '+' && op[2] == '0' || 
-          op[1] == '-' && op[2] == '0') {
+      if (op[1] == '+' && op[2] == '0' || op[1] == '-' && op[2] == '0') {
         op[1] = '+';
         op[2] = '0';
       }
@@ -1093,8 +1165,7 @@ class GameBoardState extends State<GameBoard> {
 
     // 对加法和乘法的操作进行排序（结合律）
     operations.sort((a, b) {
-      if ((a[1] == '+' && b[1] == '+') || 
-          (a[1] == '×' && b[1] == '×')) {
+      if ((a[1] == '+' && b[1] == '+') || (a[1] == '×' && b[1] == '×')) {
         return int.parse(a[0]).compareTo(int.parse(b[0]));
       }
       return 0;
@@ -1108,12 +1179,22 @@ class GameBoardState extends State<GameBoard> {
     return normalizedSolution;
   }
 
+  List<String> _normalizeAndDeduplicateSolutions(List<String> solutions) {
+    // 规范化每个解法
+    List<String> normalizedSolutions = solutions.map((solution) {
+      return _normalizeSolution(solution);
+    }).toList();
+
+    // 去除重复解法
+    return normalizedSolutions.toSet().toList();
+  }
+
   void _startNewRound() {
     setState(() {
       for (var card in gameState.currentCards) {
         gameState.addToDiscardPile(card);
       }
-      
+
       gameState.currentRound++;
       gameState.dealNewCards();
       history.clear();
@@ -1125,7 +1206,81 @@ class GameBoardState extends State<GameBoard> {
   }
 
   RenderBox? _getOperatorPosition(String operator) {
-    return _operatorKeys[operator]?.currentContext?.findRenderObject() as RenderBox?;
+    return _operatorKeys[operator]?.currentContext?.findRenderObject()
+        as RenderBox?;
+  }
+
+  // 构建倒计时器窗口
+  Widget _buildCountdownTimer() {
+    // 获取平台信息
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final mediaQuery = MediaQuery.of(context);
+    final scaleFactor = isIOS
+        ? mediaQuery.size.width / 1024 // 假设网页版基准宽度为1024px
+        : 1.0;
+
+    // 根据剩余时间确定颜色
+    Color timerColor = Colors.green;
+    if (_remainingSeconds <= 10) {
+      timerColor = Colors.red;
+    } else if (_remainingSeconds <= 20) {
+      timerColor = Colors.orange;
+    }
+
+    return Container(
+      width: isIOS ? 100 * scaleFactor : 100,
+      height: isIOS ? 100 * scaleFactor : 100,
+      decoration: BoxDecoration(
+        color: const Color(0xFF111827).withOpacity(0.8),
+        borderRadius: BorderRadius.circular(isIOS ? 50 * scaleFactor : 50),
+        border:
+            Border.all(color: timerColor, width: isIOS ? 3 * scaleFactor : 3),
+        boxShadow: [
+          BoxShadow(
+            color: timerColor.withOpacity(0.5),
+            blurRadius: isIOS ? 10 * scaleFactor : 10,
+            spreadRadius: isIOS ? 2 * scaleFactor : 2,
+          ),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 圆形进度指示器
+          SizedBox(
+            width: isIOS ? 90 * scaleFactor : 90,
+            height: isIOS ? 90 * scaleFactor : 90,
+            child: CircularProgressIndicator(
+              value: _remainingSeconds / 30, // 30秒为满值
+              strokeWidth: isIOS ? 8 * scaleFactor : 8,
+              backgroundColor: Colors.grey.withOpacity(0.3),
+              color: timerColor,
+            ),
+          ),
+          // 倒计时数字
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '$_remainingSeconds',
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const Text(
+                '秒',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   void _startTimer() {
