@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'pages/home_page.dart';
 
 void main() {
@@ -11,9 +12,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '24点游戏',
+      title: '24\u70b9\u6e38\u620f',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0F7A4D),
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF031F18),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: const HomePage(),

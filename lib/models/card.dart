@@ -1,9 +1,11 @@
+import '../engine/rational.dart';
+
 class PlayingCard {
-  final int value;      // 牌面值 (1-13)
-  final String? suit;    // 花色
+  final int value;
+  final String? suit;
   final int numerator;
   final int denominator;
-  final bool isVirtual; // 是否是计算后的虚拟卡牌
+  final bool isVirtual;
 
   PlayingCard({
     required this.value,
@@ -13,9 +15,33 @@ class PlayingCard {
     this.isVirtual = false,
   });
 
+  factory PlayingCard.virtual(Rational rationalValue) {
+    return PlayingCard(
+      value: rationalValue.numerator,
+      numerator: rationalValue.numerator,
+      denominator: rationalValue.denominator,
+      isVirtual: true,
+    );
+  }
+
+  Rational get rationalValue {
+    if (isVirtual) {
+      return Rational(numerator, denominator);
+    }
+
+    return Rational(value);
+  }
+
   String get display {
-    if (value > 13) return value.toString();
-    switch (value) {
+    final displayValue = rationalValue;
+    if (isVirtual || !displayValue.isInteger) {
+      return displayValue.toString();
+    }
+
+    final integerValue = displayValue.numerator;
+    if (integerValue > 13) return integerValue.toString();
+
+    switch (integerValue) {
       case 1:
         return 'A';
       case 11:
@@ -25,7 +51,7 @@ class PlayingCard {
       case 13:
         return 'K';
       default:
-        return value.toString();
+        return integerValue.toString();
     }
   }
 }

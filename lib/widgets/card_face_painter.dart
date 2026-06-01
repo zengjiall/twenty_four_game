@@ -19,7 +19,7 @@ class CardFacePainter extends CustomPainter {
       ..strokeWidth = 2;
 
     final center = Offset(size.width / 2, size.height / 2);
-    
+
     // 绘制基本轮廓
     if (type == 'J') {
       _drawJack(canvas, size, paint);
@@ -58,13 +58,13 @@ class CardFacePainter extends CustomPainter {
     path.lineTo(size.width * 0.6, size.height * 0.4);
     path.lineTo(size.width * 0.4, size.height * 0.4);
     path.close();
-    
+
     // 添加帽子
     path.moveTo(size.width * 0.3, size.height * 0.2);
     path.lineTo(size.width * 0.7, size.height * 0.2);
     path.lineTo(size.width * 0.5, size.height * 0.1);
     path.close();
-    
+
     canvas.drawPath(path, paint);
   }
 
@@ -76,14 +76,16 @@ class CardFacePainter extends CustomPainter {
     path.lineTo(size.width * 0.5, size.height * 0.2);
     path.lineTo(size.width * 0.6, size.height * 0.1);
     path.lineTo(size.width * 0.7, size.height * 0.2);
-    
+
     // 脸部轮廓
     path.moveTo(size.width * 0.4, size.height * 0.3);
     path.quadraticBezierTo(
-      size.width * 0.5, size.height * 0.4,
-      size.width * 0.6, size.height * 0.3,
+      size.width * 0.5,
+      size.height * 0.4,
+      size.width * 0.6,
+      size.height * 0.3,
     );
-    
+
     canvas.drawPath(path, paint);
   }
 
@@ -93,19 +95,19 @@ class CardFacePainter extends CustomPainter {
     path.moveTo(size.width * 0.3, size.height * 0.2);
     path.lineTo(size.width * 0.5, size.height * 0.1);
     path.lineTo(size.width * 0.7, size.height * 0.2);
-    
+
     // 胡须
     path.moveTo(size.width * 0.4, size.height * 0.3);
     path.lineTo(size.width * 0.5, size.height * 0.4);
     path.lineTo(size.width * 0.6, size.height * 0.3);
-    
+
     canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant CardFacePainter oldDelegate) {
-    return oldDelegate.type != type || 
-           oldDelegate.suit != suit || 
-           oldDelegate.color != color;
+    return oldDelegate.type != type ||
+        oldDelegate.suit != suit ||
+        oldDelegate.color != color;
   }
-} 
+}
